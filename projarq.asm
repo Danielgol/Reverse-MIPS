@@ -21,23 +21,23 @@ main:
 	la 	$a1, input 				# Buffer que armazena o conteudo
 	li 	$a2, 1024 				# Tamanho do buffer = deve ser maior que o tam do arq
 	syscall 					# Leitura de TODO o arquivo, colocando a informação no buffer
-	la 	$a0, input				# a0 = palavra
 	
-	li 	$t7, 0					# int t7 = tamanho das palavras até ele
+	la 	$a0, input				# a0 = palavra
+	li 	$s2, 0					# int s2 = tamanho das palavras até ele
 	
 	loop:
 		jal 	find_word
 	
-		add	$t6, $zero, $v0			# t6 = tamanho da palavra atual + \n
-		add	$t7, $t7, $t6
-		add	$t1, $zero, $t7			# t1 = length
+		add	$s1, $zero, $v0			# s1 = tamanho da palavra atual + \n
+		add	$s2, $s2, $s1			# s2 += s1
+		add	$t1, $zero, $s2			# t1 = length
 		add	$t2, $zero, $a0			# t2 = palavra
 	
 		jal	reverse_word
 	
-		addi	$t6, $t6, 1			# inicio da prox palavra
-		addi	$t7, $t7, 1
-		add	$a0, $a0, $t6
+		addi	$s1, $s1, 1			# inicio da prox palavra
+		addi	$s2, $s2, 1
+		add	$a0, $a0, $s1
 		
 		li	$t0, 0
 		li	$t2, 0
@@ -51,7 +51,7 @@ main:
 		la	$a0, output			# the string!
 		syscall
 		
-    		li $v0, 13 				# abrir arquivo Saida
+		li $v0, 13 				# abrir arquivo Saida
     		la $a0, arqSaida 			# caminho do arquivo
     		li $a1, 1 				# arquivo para escrita
     		syscall 				# descritor(REGISTRADOR/buffer QUE GUARDA O ARQUIVO) em $v0
@@ -89,7 +89,6 @@ main:
 			j	find_loop		# volta pro loop
 			
 		found:
-			#subi 	$t0, $t0, 1
 			add	$v0, $zero, $t0
 			add	$t0, $zero, $zero
 			jr	$ra
@@ -110,10 +109,47 @@ main:
 			slti	$t5, $t4, 11		# t5 = 0 ou 1 (t1 <= 10)
 			beq	$t5, 1, reversed	# if (t1<10){strlen_exit}
 			
+			slti	$t6, $t4, 58		
+			slti	$t7, $t4, 48		
+			beq	$t7, 1, continuar
+			beq	$t6, 1, found_number
+			
+			slti	$t6, $t4, 91		
+			slti	$t7, $t4, 65		
+			beq	$t7, 1, continuar
+			beq	$t6, 1, lower_case
+			
+			slti	$t6, $t4, 123		
+			slti	$t7, $t4, 97		
+			beq	$t7, 1, continuar
+			beq	$t6, 1, upper_case
+			
+		continuar:
 			sb	$t4, output($t1)	# output[t1] = t4	
 			subi	$t1, $t1, 1		# t1--
 			addi	$t0, $t0, 1		# t0++
 			j	reverse_loop		# Loop until we reach our condition
-	
+			
+		found_number:
+			li	$t6, 32
+			
+			loop_space:
+				add	$t3, $t2, $t0
+				lb	$t4, 0($t3)
+				slti	$t5, $t4, 11		
+				beq	$t5, 1, exit
+				sb	$t6, output($t1)
+				subi	$t1, $t1, 1
+				addi	$t0, $t0, 1
+				j	loop_space
+		
+		lower_case:
+			addi 	$t4, $t4, 32
+			j 	continuar
+			
+		upper_case:
+			addi 	$t4, $t4, -32
+			j 	continuar
+		
 		reversed:
 			jr	$ra
